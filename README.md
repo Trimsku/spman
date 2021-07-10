@@ -1,4 +1,5 @@
-Hello, this is spman, simple automation build, used c++.
+# spman
+Hello, this is spman, simple automation build, used c++, for AsciiMachine.
 
 How to compile with g++?:
 ```
@@ -24,4 +25,3 @@ I am used two, NOT MY projects:
 
 First, https://github.com/kokke/tiny-regex-c, tiny_regex_c project.
 Second, https://github.com/tronkko/dirent, dirent.h(UNIX), for Microsoft Windows. 
-# spman
