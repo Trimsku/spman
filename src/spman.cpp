@@ -88,7 +88,7 @@ void spman::Filemake::GenerateFile(int project_generator, int proj_type) {
                     files = file_s[1];
                 }
             }
-            sfprintf("\nBINS := $(BIN_DIR)/%s\n", (proj_type==project_type::executable ? proj_name.c_str() : (proj_name+".so").c_str() ));
+            sfprintf("\nBINS := $(BIN_DIR)/%s%s\n", proj_name.c_str(), (proj_type!=project_type::executable?".so":"") );
             sfputs("all: create_dirs $(OBJS) $(BINS)\n");
             sfputs(".PHONY: create_dirs clean");
             sfputs("create_dirs:");
@@ -96,7 +96,7 @@ void spman::Filemake::GenerateFile(int project_generator, int proj_type) {
 	            sfputs("\t$(SILENT) mkdir -p $(BIN_DIR)");
             sfputs("clean:");
 	            sfputs("\trm -f $(OBJS_DIR)/*.o\n");
-            sfprintf("$(BIN_DIR)/%s:", (proj_type==project_type::executable ? proj_name.c_str() : (proj_name+".so").c_str() ));
+            sfprintf("$(BIN_DIR)/%s%s:", proj_name.c_str(), (proj_type!=project_type::executable?".so":"") );
 	            sfputs("\t$(SILENT) echo Building $@...");
                 sfprintf("\t$(SILENT) $(CXX) %s $(CFLAGS) $(OBJS) $(ARGS) -o $@\n", (proj_type==project_type::shared_lib?"--shared":""));
 
