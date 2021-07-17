@@ -7,7 +7,7 @@ extern "C" {
 
 /*** Project ***/
 int generator;
-int proj_type;
+int proj_type = project_type::executable;
 int filemake_index = 0;
 astd::string files;
 astd::string name;
