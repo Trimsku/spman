@@ -32,7 +32,13 @@ extern astd::container_s libraries_paths;
 
 enum generator_type {
     vs2017 = 1,
-    gmake4 = 2,
+    gmake4= 2,
+};
+
+
+enum project_type {
+    executable = 1,
+    shared_lib = 2,
 };
 
 //! Spman namespace.
@@ -54,17 +60,17 @@ namespace spman
             astd::string files;
             astd::string proj_name;
             astd::string uuid;
-            astd::container<const char*> library_names;
+            astd::container_s library_names;
         public:
 
             Filemake(const char* project_name_);
             ~Filemake();
 
-            void GenerateFile(int project_generator);
+            void GenerateFile(int project_generator, int proj_type = project_type::executable);
 
             template<typename T, typename... Args>
             void include_files(T first, Args... args);
-            void link_library(const char *name);
+            void link_library(astd::string name);
 
             astd::string getProjectName();
             astd::string getUuid();
@@ -80,10 +86,9 @@ namespace spman
             MakeWorkspace(astd::string name);
             ~MakeWorkspace();
             void AddProject(spman::Filemake &project);
-            void GenerateFile(int generator_type);
+            void GenerateFile(int generator_type, int proj_type = project_type::executable);
             void createClass();
             void setName(astd::string new_name);
-            friend class Filemake;
     };
 
     //! Template functions

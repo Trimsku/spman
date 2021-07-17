@@ -23,7 +23,7 @@ bool file_exists(const char* name) {
     return (stat(name, &buffer) == 0);
 }
 
-void spman::Filemake::GenerateFile(int project_generator) {
+void spman::Filemake::GenerateFile(int project_generator, int project_type) {
     FILE *fptr;
     astd::string files_save = files;
     if(project_generator == generator_type::gmake4) {
@@ -45,13 +45,15 @@ void spman::Filemake::GenerateFile(int project_generator) {
             for(int i = 0; i < library_names.size(); i++) {
                 for(int j = 0; j < libraries_paths.size(); j++) {
                     if( file_exists( (libraries_paths[j] + (libraries_paths[j][libraries_paths[j].len()] == '/'?"lib":"/lib") + library_names[i] + ".so").c_str() ) ) {
-                        sfprintf("ARGS += -L%s -l%s ", libraries_paths[j], library_names[i]);
+                        sfprintf("ARGS += -L%s -l%s ", libraries_paths[j].c_str(), library_names[i].c_str());
+                        printf("DEBUG");
                         is_system_lib = false;
                         break;
                     }
                 }
                 if(is_system_lib) {
-                    sfprintf("ARGS += -l%s ", library_names[i]);
+                    sfprintf("ARGS += -l%s", library_names[i].c_str());
+                    printf("DEBUG0: %s\n", library_names[i].c_str());
                 } else is_system_lib = true;
             }
             astd::string files_o;
@@ -446,7 +448,7 @@ void spman::add_library_path(const char* path_to_library) {
     libraries_paths.push(path_to_library);
 }
 
-void spman::Filemake::link_library(const char *name) { 
+void spman::Filemake::link_library(astd::string name) { 
     library_names.push(name);
 }
 
@@ -468,7 +470,7 @@ spman::MakeWorkspace::~MakeWorkspace() {}
 void spman::MakeWorkspace::setName(astd::string new_name) {
     name = new_name;
 }
-void spman::MakeWorkspace::GenerateFile(int generator) {
+void spman::MakeWorkspace::GenerateFile(int generator, int project_type) {
     FILE *fptr;
     if(generator == generator_type::vs2017) {
         if((fptr = fopen((name + ".sln").c_str(), "w")) != NULL) {

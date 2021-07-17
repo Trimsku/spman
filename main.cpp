@@ -11,7 +11,7 @@ int filemake_index = 0;
 astd::string files;
 astd::string name;
 bool cc = false;
-astd::container<const char*> library_names;
+astd::container_s library_names;
 /*** Project end ***/
 /*** Workspace ***/
 spman::MakeWorkspace mWorkspace("Workspace");
@@ -45,7 +45,9 @@ static int SetGenerator(lua_State * L) {
     return 1;
 }
 static int LinkLibrary(lua_State * L) {
-    library_names.push(lua_tostring(L, 1));
+    astd::string tmp(lua_tostring(L, 1));
+    library_names.push(tmp);
+    printf("Debug in %s: %s\n", __PRETTY_FUNCTION__, lua_tostring(L, 1));
     return 1;
 }
 static int AddLibraryPath(lua_State * L) {
@@ -124,13 +126,16 @@ int main(int argc, char** argv) {
     if (iErr != 0) {
         printf("LoadingError: %s\n", lua_tostring(lua, -1));
     }
-    generator = (rgenerator?rgenerator:generator);
+    if( rgenerator != -1) {
+        generator = rgenerator;
+    }
     printf("Generator: %s\n", generator==generator_type::gmake4?"gmake4":"Visual Studio 2017");
     lua_close (lua);
     if(filemake_index == 1) {
         spman::Filemake file(name.c_str());
         file.include_files(files, " "); // All files;
         for(int i = 0; i < library_names.size(); i++) {
+            printf("Debug in %s: %s\n", __PRETTY_FUNCTION__, library_names[i].c_str());
             file.link_library(library_names[i]);
         }
         file.GenerateFile(generator);
