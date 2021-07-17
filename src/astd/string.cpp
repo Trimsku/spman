@@ -40,14 +40,6 @@ namespace astd {
         sprintf(current_data, "%s", tmp);
         length++;
         delete[] tmp;
-        /*char *ret = new char[len()+2];
-        std::move(current_data, current_data + length, ret);
-        ret[len()] = ch;
-        ret[len()+1] = '\0';
-
-        std::swap(ret, current_data);
-        //delete[] ret;
-        length++;*/
         return *this;
     }
     // Operator +=(const char*)
@@ -55,8 +47,6 @@ namespace astd {
         for(int i = 0; i < strlen(data); i++) {
             *this += data[i];
         }
-        //std::memcpy(current_data, data, strlen(data));
-        
         return *this;
     }
     // Operator +=(astd::string)
@@ -68,7 +58,16 @@ namespace astd {
     }
 
     // Operator []. Return char on the string index.
-    char &string::operator[](const int index) {
+    char &string::operator[](int index) {
+        if(0 <= index && index <= length) {
+            return current_data[index];
+        } else {
+            printf("Error: wrong index, index is %s, index: %d, in %s\n", (index <= 0?"less than 0":"more than size()"), index, __BASE_FILE__);
+            //printf("Your index is not correct. Error: %s in line: %d, length: %d", __FILE__, length);
+            exit(1); 
+        }
+    }
+    const char& string::operator[](int index) const {
         if(0 <= index && index <= length) {
             return current_data[index];
         } else {
@@ -105,11 +104,7 @@ namespace astd {
     }
 
     bool string::operator==(astd::string str) {
-        if(str.len() != len()) return false;
-        for(int i = 0; i < length; i++) {
-            if(str.current_data[i] != current_data[i]) return false;
-        }
-        return true;
+        return !strcmp(c_str(), str.c_str());
     }
     bool string::operator!=(astd::string str) {
         return !(*this==str);

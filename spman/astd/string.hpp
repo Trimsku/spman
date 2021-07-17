@@ -34,7 +34,8 @@ public:
     string operator+(const char* str); // X
     bool operator==(astd::string str);
     bool operator!=(astd::string str);
-    char &operator[](const int index); // \/
+    char &operator[](int index); // \/
+    const char& operator[](int index) const;
     char *data() const; // \/
     int len() const; // \/
     const char* c_str() const; // \/

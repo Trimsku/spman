@@ -36,7 +36,7 @@
     #include <TargetConditionals.h>
     // https://github.com/theos/sdks/blob/master/iPhoneOS14.4.sdk/usr/include/TargetConditionals.h
     // In str 64-78.
-
+    #define P_MACOS
     #if defined(TARGET_OS_MAC)      // - Generated code will run under Mac OS X variant
 
         #if defined(TARGET_OS_OSX) || defined(TARGET_OS_MACCATALYST)

@@ -1,5 +1,5 @@
 #include "../../spman/util/gen_uuid.hpp"
-#include "../../spman/astd/Platform.hpp"
+#include "../../spman/astd/Platform.h"
 #ifdef P_WINDOWS
     #include <Objbase.h>
 #endif

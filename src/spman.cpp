@@ -1,4 +1,5 @@
 #include "../spman/spman.hpp"
+#include <sys/stat.h>   // stat
 
 astd::string help[9] = {
     "Usage: make [config=name] [target]",
@@ -11,15 +12,21 @@ astd::string help[9] = {
     "\tall (default)",
 	"\tclean",    
 };
+astd::container_s libraries_paths = {};
 
 spman::Filemake::Filemake(const char* project_name_) : proj_name(project_name_), uuid(astd::createUUID()) {}
 
 spman::Filemake::~Filemake() {} 
 
+bool file_exists(const char* name) {
+    struct stat buffer;   
+    return (stat(name, &buffer) == 0);
+}
+
 void spman::Filemake::GenerateFile(int project_generator) {
     FILE *fptr;
     astd::string files_save = files;
-    if(project_generator == generator_type::make4) {
+    if(project_generator == generator_type::gmake4) {
         println("Generated %s.mk, -G 'GNU Make 4.0'...", proj_name.c_str());
         if((fptr = fopen((proj_name + ".mk").c_str(), "w")) != NULL) {
             sfputs("ifndef verbose");
@@ -34,6 +41,19 @@ void spman::Filemake::GenerateFile(int project_generator) {
                 sfputs("\tBIN_DIR := bin/Release");
                 sfputs("\tARGS := -O3");
             sfputs("endif");
+            bool is_system_lib = true;
+            for(int i = 0; i < library_names.size(); i++) {
+                for(int j = 0; j < libraries_paths.size(); j++) {
+                    if( file_exists( (libraries_paths[j] + (libraries_paths[j][libraries_paths[j].len()] == '/'?"lib":"/lib") + library_names[i] + ".so").c_str() ) ) {
+                        sfprintf("ARGS += -L%s -l%s ", libraries_paths[j], library_names[i]);
+                        is_system_lib = false;
+                        break;
+                    }
+                }
+                if(is_system_lib) {
+                    sfprintf("ARGS += -l%s ", library_names[i]);
+                } else is_system_lib = true;
+            }
             astd::string files_o;
             fprintf(fptr, "%s","OBJS := ");
             for( ;; ) {
@@ -93,7 +113,7 @@ void spman::Filemake::GenerateFile(int project_generator) {
         }
         fclose(fptr);
     }
-    if(project_generator == generator_type::vc2017) {
+    if(project_generator == generator_type::vs2017) {
         if((fptr = fopen((proj_name + ".vcxproj").c_str(), "w")) != NULL) {
             println("Generated %s, -G 'vs2017'...", (proj_name + ".vcxproj").c_str());
             // VS C++ config.
@@ -254,9 +274,9 @@ void spman::Filemake::GenerateFile(int project_generator) {
                     //println("CPP_istr: %s", istr.c_str());
                     files = file_s[1];
                     //println("CPP_files: %s", files.c_str());
-                    if(astd::split(istr, '.')[1] == "cpp" || astd::split(istr, '.')[1] == "c") {
+                    if(astd::split_end(istr, '.')[1] == "cpp" || astd::split_end(istr, '.')[1] == "c") {
                         sfprintf("\t\t<ClCompile Include=\"%s\" />", istr.c_str());
-                    } else if(astd::split(istr, '.')[1] == "hpp" || astd::split(istr, '.')[1] == "h") {
+                    } else if(astd::split_end(istr, '.')[1] == "hpp" || astd::split_end(istr, '.')[1] == "h") {
                         sfprintf("\t\t<ClInclude Include=\"%s\" />", istr.c_str());
                     }
                 } else if(file_s[0] == "") {
@@ -272,9 +292,9 @@ void spman::Filemake::GenerateFile(int project_generator) {
                     //println("CPP_istr: %s", istr.c_str());
                     files = file_s[1];
                     //println("CPP_files: %s", files.c_str());
-                    if(astd::split(istr, '.')[1] == "cpp" || astd::split(istr, '.')[1] == "c") {
+                    if(astd::split_end(istr, '.')[1] == "cpp" || astd::split_end(istr, '.')[1] == "c") {
                         sfprintf("\t\t<ClCompile Include=\"%s\" />", istr.c_str());
-                    } else if(astd::split(istr, '.')[1] == "hpp" || astd::split(istr, '.')[1] == "h") {
+                    } else if(astd::split_end(istr, '.')[1] == "hpp" || astd::split_end(istr, '.')[1] == "h") {
                         sfprintf("\t\t<ClInclude Include=\"%s\" />", istr.c_str());
                     }
                 } else if(file_s[0] == "") {
@@ -293,6 +313,21 @@ void spman::Filemake::GenerateFile(int project_generator) {
             println("Generated %s, -G 'vs2017'...", (proj_name + ".vcxproj.filters").c_str());
         sfputs("<?xml version=\"1.0\" encoding=\"utf-8\"?>");
         sfputs("<Project ToolsVersion=\"4.0\" xmlns=\"http://schemas.microsoft.com/developer/msbuild/2003\">");
+            for(int i = 0; i < library_names.size(); i++) {
+                for(int j = 0; j < libraries_paths.size(); j++) {
+                    sfputs("\t<ItemDefinitionGroup>");
+                    if( file_exists( (libraries_paths[j] + (libraries_paths[j][libraries_paths[j].len()] == '/'?"lib":"/lib") + library_names[i] + ".lib").c_str() ) ) {
+                            sfputs("\t\t<ClCompile>");
+                                
+                            sfputs("\t\t</ClCompile>");
+                        break;
+                    }
+                        sfputs("\t\t<Link>");
+
+                        sfputs("\t\t</Link");
+                    sfputs("\t</ItemDefinitionGroup>");
+                }
+            }
             sfputs("\t<ItemGroup>");
             astd::string dirs;
             astd::container_s dirs_c;
@@ -332,7 +367,7 @@ void spman::Filemake::GenerateFile(int project_generator) {
                             if(dirs_c[i] == astd::split_end(istr, '/')[0]) {
                                 if(astd::split(istr, '.')[1] == "cpp" || astd::split(istr, '.')[1] == "c") {
                                     sfprintf("\t\t<ClCompile Include=\"%s\">", istr.c_str());
-                                } else if(astd::split(istr, '.')[1] == "hpp" || astd::split(istr, '.')[1] == "h") {
+                                } else if(astd::split_end(istr, '.')[1] == "hpp" || astd::split_end(istr, '.')[1] == "h") {
                                     sfprintf("\t\t<ClInclude Include=\"%s\">", istr.c_str());
                                 }
                                 sfprintf("\t\t\t<Filter>%s</Filter>", dirs_c[i].c_str());
@@ -342,9 +377,9 @@ void spman::Filemake::GenerateFile(int project_generator) {
                             }
                         }
                         if(is_on_dir == false) {
-                        if(astd::split(istr, '.')[1] == "cpp" || astd::split(istr, '.')[1] == "c") {
+                        if(astd::split_end(istr, '.')[1] == "cpp" || astd::split_end(istr, '.')[1] == "c") {
                             sfprintf("\t\t<ClCompile Include=\"%s\" />", istr.c_str());
-                        } else if(astd::split(istr, '.')[1] == "hpp" || astd::split(istr, '.')[1] == "h") {
+                        } else if(astd::split_end(istr, '.')[1] == "hpp" || astd::split_end(istr, '.')[1] == "h") {
                             sfprintf("\t\t<ClInclude Include=\"%s\" />", istr.c_str());
                         }
                         }
@@ -358,31 +393,40 @@ void spman::Filemake::GenerateFile(int project_generator) {
     }
 }
 
-astd::string spman::include_subdirectory_files(const char* folder_name, const char* pattern_) {
-    astd::string f_p("");
-    if(pattern_[0] == '*') {
-        f_p += '.';
-    } f_p += pattern_;
-    const char* formatted_pattern = f_p.c_str();
+astd::string spman::include_subdirectory_files(const char* folder_name_with_pattern) {
     int result;
-    re_t pattern = re_compile(formatted_pattern);
-    astd::string files("");
+    astd::string folder_name;
+    astd::string pattern;
+    if(astd::split_end(folder_name_with_pattern, '/')[1] == "") {
+        folder_name = ".";
+        pattern = astd::split_end(folder_name_with_pattern, '/')[0];
+    } else {
+        folder_name = astd::split_end(folder_name_with_pattern, '/')[0];
+        pattern = astd::split_end(folder_name_with_pattern, '/')[1];
+    }
+    astd::string f_p;
+    for(int i = 0; i < pattern.len(); i++) {
+        if(pattern[i] == '*') f_p += '.';
+        f_p += pattern[i];
+    }
+    re_t re_pattern = re_compile(f_p.c_str());
+    astd::string files;
     DIR* dir;
     struct dirent *ent;
-    if((dir = opendir(folder_name)) != NULL) {
+    if((dir = opendir(folder_name.c_str())) != NULL) {
         while ((ent = readdir(dir)) != NULL) {
-            if(ent->d_type == DT_REG) {
-                if(re_matchp(pattern, ent->d_name, &result) != -1) {
+            if(re_matchp(re_pattern, ent->d_name, &result) != -1) {
+                if(folder_name != ".") {
                     files += folder_name;
                     files += '/';
-                    files += ent->d_name;
-                    files += "  ";
                 }
+                files += ent->d_name;
+                files += "  ";
             }
         }
         closedir(dir);
     } else {
-        printf("\"%s\" not a directory. \n", folder_name);
+        printf("\"%s\" not a directory. \n", folder_name.c_str());
         closedir(dir);
         exit(0);
     }
@@ -398,9 +442,14 @@ astd::string spman::include_file(const char* filename) {
     return filename;
 }
 
-astd::string spman::Filemake::getArgs() {
-    return arg;
+void spman::add_library_path(const char* path_to_library) {
+    libraries_paths.push(path_to_library);
 }
+
+void spman::Filemake::link_library(const char *name) { 
+    library_names.push(name);
+}
+
 astd::string spman::Filemake::getProjectName() {
     return proj_name;
 }
@@ -416,9 +465,12 @@ void spman::MakeWorkspace::AddProject(spman::Filemake &project) {
 
 spman::MakeWorkspace::MakeWorkspace(astd::string name_) : name(name_) {}
 spman::MakeWorkspace::~MakeWorkspace() {}
+void spman::MakeWorkspace::setName(astd::string new_name) {
+    name = new_name;
+}
 void spman::MakeWorkspace::GenerateFile(int generator) {
     FILE *fptr;
-    if(generator == generator_type::vc2017) {
+    if(generator == generator_type::vs2017) {
         if((fptr = fopen((name + ".sln").c_str(), "w")) != NULL) {
             println("Generated %s, -G 'vs2017'...", (name + ".sln").c_str());
             sfputs("\nMicrosoft Visual Studio Solution File, Format Version 12.00");
@@ -453,7 +505,7 @@ void spman::MakeWorkspace::GenerateFile(int generator) {
 	            sfputs("\tEndGlobalSection");
             sfputs("EndGlobal");
         } 
-    } else if(generator == generator_type::make4) {
+    } else if(generator == generator_type::gmake4) {
         if((fptr = fopen(("Makefile"), "w")) != NULL) {
             puts("Generated Makefile, -G 'GNU Make 4.0'...");
             sfputs("ifndef config");

@@ -34,11 +34,11 @@ namespace astd {
         void push(T data);
         void pop();
         int size();
-        T operator[](const int index);
+        T &operator[](const int index);
     };
 
     template<typename T>
-    T container<T>::operator[](const int index) {
+    T &container<T>::operator[](const int index) {
         if(0 <= index && index <= length-1) {
             return arr[index];
         } else {
