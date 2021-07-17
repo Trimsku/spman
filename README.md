@@ -2,9 +2,9 @@
 Hello, this is spman, simple automation build, used c++, for AsciiMachine.
 ```
 Executable files, available: 
-    For win32: releases/0.0.1/spm32.exe
-    For win64: releases/0.0.1/spm.exe
-    For linux, x86_64: releases/0.0.1/spm
+    For win32: releases/0.0.1/spm_win32.exe
+    For win64: releases/0.0.1/spm_win64.exe
+    For linux, x86_64: releases/0.0.1/spm_linux64
         (tested on Manjaro Linux x86_64, gnome 3.38.4)
 ```
 ```
