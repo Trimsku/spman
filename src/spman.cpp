@@ -24,7 +24,7 @@ bool file_exists(const char* name) {
     return (stat(name, &buffer) == 0);
 }
 
-void spman::Filemake::GenerateFile(int project_generator, int project_type) {
+void spman::Filemake::GenerateFile(int project_generator, int proj_type) {
     FILE *fptr;
     astd::string files_save = files;
     if(project_generator == generator_type::gmake4) {
@@ -48,14 +48,12 @@ void spman::Filemake::GenerateFile(int project_generator, int project_type) {
                 for(int j = 0; j < libraries_paths.size(); j++) {
                     if( file_exists( (libraries_paths[j] + (libraries_paths[j][libraries_paths[j].len()] == '/'?"lib":"/lib") + library_names[i] + ".so").c_str() ) ) {
                         sfprintf("ARGS += -L%s -l%s ", libraries_paths[j].c_str(), library_names[i].c_str());
-                        printf("DEBUG");
                         is_system_lib = false;
                         break;
                     }
                 }
                 if(is_system_lib) {
                     sfprintf("ARGS += -l%s", library_names[i].c_str());
-                    printf("DEBUG0: %s\n", library_names[i].c_str());
                 } else is_system_lib = true;
             }
             for(;;) {
@@ -90,7 +88,7 @@ void spman::Filemake::GenerateFile(int project_generator, int project_type) {
                     files = file_s[1];
                 }
             }
-            sfprintf("\nBINS := $(BIN_DIR)/%s\n", proj_name.c_str());
+            sfprintf("\nBINS := $(BIN_DIR)/%s\n", (proj_type==project_type::executable ? proj_name.c_str() : (proj_name+".so").c_str() ));
             sfputs("all: create_dirs $(OBJS) $(BINS)\n");
             sfputs(".PHONY: create_dirs clean");
             sfputs("create_dirs:");
@@ -100,7 +98,7 @@ void spman::Filemake::GenerateFile(int project_generator, int project_type) {
 	            sfputs("\trm -f $(OBJS_DIR)/*.o\n");
             sfprintf("$(BIN_DIR)/%s:", proj_name.c_str());
 	            sfputs("\t$(SILENT) echo Building $@...");
-	            sfputs("\t$(SILENT) $(CXX) $(CFLAGS) $(OBJS) $(ARGS) -o $@\n");
+                sfprintf("\t$(SILENT) $(CXX) %s $(CFLAGS) $(OBJS) $(ARGS) -o $@\n", (proj_type==project_type::shared_lib?"--shared":""));
 
             files = files_save;
             for( ;; ) {
@@ -118,7 +116,7 @@ void spman::Filemake::GenerateFile(int project_generator, int project_type) {
                         for(int j = i; j < istr.len(); j++) fstr += istr[j];
                         sfprintf("$(OBJS_DIR)/%s.o: %s", astd::split(fstr, '.')[0].c_str(), istr.c_str());
 	                        sfputs("\t$(SILENT) echo Building $@...");
-	                        sfprintf("\t$(SILENT) $(CXX) $(CFLAGS) -c $< -o $@ $(ARGS) -MMD -MP -MF $(OBJS_DIR)/%s.d\n", astd::split(fstr, '.')[0].c_str());
+	                        sfprintf("\t$(SILENT) $(CXX) %s $(CFLAGS) -c $< -o $@ $(ARGS) -MMD -MP -MF $(OBJS_DIR)/%s.d\n", (proj_type!=project_type::executable?"-fPIC":""),astd::split(fstr, '.')[0].c_str());
                     }
                 } else if(file_s[0] == "") {
                     files = file_s[1];
@@ -162,26 +160,26 @@ void spman::Filemake::GenerateFile(int project_generator, int project_type) {
             // Other...
             sfputs("\t<Import Project=\"$(VCTargetsPath)\\Microsoft.Cpp.Default.props\" />");
             sfputs("\t<PropertyGroup Condition=\"'$(Configuration)|$(Platform)'=='Debug|Win32'\" Label=\"Configuration\">");
-                sfputs("\t\t<ConfigurationType>Application</ConfigurationType>");
+                sfprintf("\t\t<ConfigurationType>%s</ConfigurationType>", (proj_type==project_type::executable?"Application":"DynamicLibrary"));
                 sfputs("\t\t<UseDebugLibraries>true</UseDebugLibraries>");
                 sfputs("\t\t<PlatformToolset>v141</PlatformToolset>");
                 sfputs("\t\t<CharacterSet>Unicode</CharacterSet>");
             sfputs("\t</PropertyGroup>");
             sfputs("\t<PropertyGroup Condition=\"'$(Configuration)|$(Platform)'=='Release|Win32'\" Label=\"Configuration\">");
-                sfputs("\t\t<ConfigurationType>Application</ConfigurationType>");
+                sfprintf("\t\t<ConfigurationType>%s</ConfigurationType>", (proj_type==project_type::executable?"Application":"DynamicLibrary"));
                 sfputs("\t\t<UseDebugLibraries>false</UseDebugLibraries>");
                 sfputs("\t\t<PlatformToolset>v141</PlatformToolset>");
                 sfputs("\t\t<WholeProgramOptimization>true</WholeProgramOptimization>");
                 sfputs("\t\t<CharacterSet>Unicode</CharacterSet>");
             sfputs("\t</PropertyGroup>");
             sfputs("\t<PropertyGroup Condition=\"'$(Configuration)|$(Platform)'=='Debug|x64'\" Label=\"Configuration\">");
-                sfputs("\t\t<ConfigurationType>Application</ConfigurationType>");
+                sfprintf("\t\t<ConfigurationType>%s</ConfigurationType>", (proj_type==project_type::executable?"Application":"DynamicLibrary"));
                 sfputs("\t\t<UseDebugLibraries>true</UseDebugLibraries>");
                 sfputs("\t\t<PlatformToolset>v141</PlatformToolset>");
                 sfputs("\t\t<CharacterSet>Unicode</CharacterSet>");
             sfputs("\t</PropertyGroup>");
             sfputs("\t<PropertyGroup Condition=\"'$(Configuration)|$(Platform)'=='Release|x64'\" Label=\"Configuration\">");
-                sfputs("\t\t<ConfigurationType>Application</ConfigurationType>");
+                sfprintf("\t\t<ConfigurationType>%s</ConfigurationType>", (proj_type==project_type::executable?"Application":"DynamicLibrary"));
                 sfputs("\t\t<UseDebugLibraries>false</UseDebugLibraries>");
                 sfputs("\t\t<PlatformToolset>v141</PlatformToolset>");
                 sfputs("\t\t<WholeProgramOptimization>true</WholeProgramOptimization>");
@@ -483,7 +481,7 @@ spman::MakeWorkspace::~MakeWorkspace() {}
 void spman::MakeWorkspace::setName(astd::string new_name) {
     name = new_name;
 }
-void spman::MakeWorkspace::GenerateFile(int generator, int project_type) {
+void spman::MakeWorkspace::GenerateFile(int generator, int proj_type) {
     FILE *fptr;
     if(generator == generator_type::vs2017) {
         if((fptr = fopen((name + ".sln").c_str(), "w")) != NULL) {

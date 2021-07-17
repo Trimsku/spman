@@ -7,6 +7,7 @@ extern "C" {
 
 /*** Project ***/
 int generator;
+int proj_type;
 int filemake_index = 0;
 astd::string files;
 astd::string name;
@@ -47,7 +48,6 @@ static int SetGenerator(lua_State * L) {
 static int LinkLibrary(lua_State * L) {
     astd::string tmp(lua_tostring(L, 1));
     library_names.push(tmp);
-    printf("Debug in %s: %s\n", __PRETTY_FUNCTION__, lua_tostring(L, 1));
     return 1;
 }
 static int AddLibraryPath(lua_State * L) {
@@ -89,14 +89,25 @@ static int AddCompileOptions(lua_State * L) {
     }
     return 1;
 }
+static int SetProjectType(lua_State * L) {
+    if(strcmp(lua_tostring(L, 1), "Application") == 0) { 
+        proj_type = project_type::executable;
+    } else if(strcmp(lua_tostring(L, 1), "SharedLib") == 0) {
+        proj_type = project_type::shared_lib;
+    } else {
+        printf("Your project type don't support. Available: Application, SharedLib");
+    }
+    return 1;
+}
 
 int main(int argc, char** argv) {
     astd::string path = ".";
     int rgenerator = -1;
+    int rproj_type = -1;
     for(int i = 1; i < argc; i++) {
         if(astd::split(argv[i], '=')[0] == "--path-to-file" || astd::split(argv[i], '=')[0] == "-p") {
             path = astd::split(argv[i], '=')[1];
-        } else if( argv[i] == "--cc" ) {
+        } else if( strcmp(argv[i], "--cc") == 0 ) {
             cc = true;
         } else if(astd::split(argv[i], '=')[0] == "--generator" || astd::split(argv[i], '=')[0] == "-g") {
             if(astd::split(argv[i], '=')[1] == "gmake4") {
@@ -105,6 +116,14 @@ int main(int argc, char** argv) {
                 rgenerator = generator_type::vs2017;
             } else {
                 printf("Your generator type don't support. Available: vs2017, gmake4");
+            }
+        } else if(astd::split(argv[i], '=')[0] == "--project-type" || astd::split(argv[i], '=')[0] == "-pt") {
+            if(strcmp(argv[i], "Application") == 0) { 
+                proj_type = project_type::executable;
+            } else if(strcmp(argv[i], "SharedLib") == 0) {
+                proj_type = project_type::shared_lib;
+            } else {
+                printf("Your project type don't support. Available: Application, SharedLib");
             }
         }
     }
@@ -128,15 +147,21 @@ int main(int argc, char** argv) {
     lua_setglobal(lua, "IsCrossCompiler");
     lua_pushcfunction(lua, AddCompileOptions);
     lua_setglobal(lua, "AddCompileOptions");
+    lua_pushcfunction(lua, SetProjectType);
+    lua_setglobal(lua, "SetProjectType");
 
     luaopen_base (lua);
     
     iErr = luaL_dofile(lua, (path + (path[path.len()] == '/'?"spm_main.lua":"/spm_main.lua")).c_str());
     if (iErr != 0) {
         printf("LoadingError: %s\n", lua_tostring(lua, -1));
+        exit(0);
     }
     if( rgenerator != -1) {
         generator = rgenerator;
+    }
+    if( rproj_type != -1) {
+        proj_type = rproj_type;
     }
     printf("Generator: %s\n", generator==generator_type::gmake4?"gmake4":"Visual Studio 2017");
     lua_close (lua);
@@ -144,12 +169,11 @@ int main(int argc, char** argv) {
         spman::Filemake file(name.c_str());
         file.include_files(files, " "); // All files;
         for(int i = 0; i < library_names.size(); i++) {
-            printf("Debug in %s: %s\n", __PRETTY_FUNCTION__, library_names[i].c_str());
             file.link_library(library_names[i]);
         }
-        file.GenerateFile(generator);
+        file.GenerateFile(generator, proj_type);
         mWorkspace.AddProject(file);
     }
-    mWorkspace.GenerateFile(generator);
+    mWorkspace.GenerateFile(generator, proj_type);
     return 0;
 }
