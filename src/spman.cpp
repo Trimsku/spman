@@ -13,6 +13,7 @@ astd::string help[9] = {
 	"\tclean",    
 };
 astd::container_s libraries_paths = {};
+astd::string global_args = "";
 
 spman::Filemake::Filemake(const char* project_name_) : proj_name(project_name_), uuid(astd::createUUID()) {}
 
@@ -28,6 +29,7 @@ void spman::Filemake::GenerateFile(int project_generator, int project_type) {
     astd::string files_save = files;
     if(project_generator == generator_type::gmake4) {
         println("Generated %s.mk, -G 'GNU Make 4.0'...", proj_name.c_str());
+        astd::string saved_args = global_args;
         if((fptr = fopen((proj_name + ".mk").c_str(), "w")) != NULL) {
             sfputs("ifndef verbose");
                 sfputs("\tSILENT = @");
@@ -56,6 +58,17 @@ void spman::Filemake::GenerateFile(int project_generator, int project_type) {
                     printf("DEBUG0: %s\n", library_names[i].c_str());
                 } else is_system_lib = true;
             }
+            for(;;) {
+                astd::container_s args = astd::split(global_args, ' ');
+                if(args[1] == "" && args[0] == "") break;
+                if(args[0] != "" ) {
+                    global_args = args[1];
+                    sfprintf("ARGS += -%s", args[0].c_str());
+                } else if(args[0] == "") {
+                    global_args = args[1];
+                }
+            }
+            global_args = saved_args;
             astd::string files_o;
             fprintf(fptr, "%s","OBJS := ");
             for( ;; ) {

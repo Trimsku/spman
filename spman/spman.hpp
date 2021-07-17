@@ -29,6 +29,7 @@
 
 extern astd::string help[9];
 extern astd::container_s libraries_paths;
+extern astd::string global_args;
 
 enum generator_type {
     vs2017 = 1,
@@ -45,18 +46,23 @@ enum project_type {
 namespace spman
 {
     //! Util functions
+    template<typename... Args>
+    void add_compile_options(Args ... args);
     astd::string include_subdirectory_files(const char* folder_name_with_pattern);
     astd::string include_file(const char* filename);
     void add_library_path(const char* path_to_library);
+    
+    namespace priv
+    {
+        template<typename T>
+        T add(T arg_);
+ 
+        template<typename T, typename... Args>
+        astd::string add(T arg_, Args... args);
+    } // namespace priv
 
     class Filemake {
         private:
-            template<typename T>
-            T add(T arg_);
- 
-            template<typename T, typename... Args>
-            astd::string add(T arg_, Args... args);
-
             astd::string files;
             astd::string proj_name;
             astd::string uuid;
@@ -74,6 +80,8 @@ namespace spman
 
             astd::string getProjectName();
             astd::string getUuid();
+            template<typename ... Args>
+            friend void add_compile_options(Args ... args);
     };
 
     //! Workspace class
@@ -94,11 +102,11 @@ namespace spman
     //! Template functions
 
     template<typename T>
-    T Filemake::add(T arg_){
+    T priv::add(T arg_){
         return arg_;
     }
     template<typename T, typename... Args>
-    astd::string Filemake::add(T arg_, Args... args) {
+    astd::string priv::add(T arg_, Args... args) {
         astd::string new_str(arg_);
         new_str += ' ';
         new_str += add(args...);
@@ -109,7 +117,12 @@ namespace spman
     void Filemake::include_files(T first, Args... args) {
         files += first;
         files += ' ';
-        files += add(args...); 
+        files += priv::add(args...); 
+    }
+
+    template<typename... Args>
+    void add_compile_options(Args ... args) {
+        global_args += priv::add(args..., "");
     }
 } // namespace spman
 #endif // SPMAN_HPP

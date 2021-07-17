@@ -82,6 +82,13 @@ static int Files(lua_State * L) {
     }
     return 1;
 }
+static int AddCompileOptions(lua_State * L) {
+    int args = lua_gettop(L);
+    for(int i = 1; i <= args; i++) {
+        spman::add_compile_options(lua_tostring(L, i));
+    }
+    return 1;
+}
 
 int main(int argc, char** argv) {
     astd::string path = ".";
@@ -119,6 +126,8 @@ int main(int argc, char** argv) {
     lua_setglobal(lua, "AddLibraryPath");
     lua_pushcfunction(lua, IsCrossCompiler);
     lua_setglobal(lua, "IsCrossCompiler");
+    lua_pushcfunction(lua, AddCompileOptions);
+    lua_setglobal(lua, "AddCompileOptions");
 
     luaopen_base (lua);
     
