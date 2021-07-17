@@ -96,7 +96,7 @@ void spman::Filemake::GenerateFile(int project_generator, int proj_type) {
 	            sfputs("\t$(SILENT) mkdir -p $(BIN_DIR)");
             sfputs("clean:");
 	            sfputs("\trm -f $(OBJS_DIR)/*.o\n");
-            sfprintf("$(BIN_DIR)/%s:", proj_name.c_str());
+            sfprintf("$(BIN_DIR)/%s:", (proj_type==project_type::executable ? proj_name.c_str() : (proj_name+".so").c_str() ));
 	            sfputs("\t$(SILENT) echo Building $@...");
                 sfprintf("\t$(SILENT) $(CXX) %s $(CFLAGS) $(OBJS) $(ARGS) -o $@\n", (proj_type==project_type::shared_lib?"--shared":""));
 
