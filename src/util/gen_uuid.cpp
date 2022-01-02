@@ -7,7 +7,7 @@
 namespace astd
 {
 
-    astd::string createUUID() {
+    std::string createUUID() {
         char uuid[38];
 	    unsigned char bytes[16];
     #ifdef P_WINDOWS

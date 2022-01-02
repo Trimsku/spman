@@ -3,10 +3,11 @@
 
 #include <stdio.h>
 #include "../astd/string.hpp"
+#include <string>
 
 namespace astd
 {
-    astd::string createUUID();
+    std::string createUUID();
 }
 
 #endif // SPM_UUID_H

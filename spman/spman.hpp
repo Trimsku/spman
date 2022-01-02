@@ -13,7 +13,8 @@
 //! Includes
 
 #include <stdio.h>
-#include "astd/string.hpp"
+#include <string>
+//#include "astd/string.hpp"
 #include "astd/regex.hpp"
 #include "astd/container.hpp"
 #include "util/gen_uuid.hpp"
@@ -27,19 +28,20 @@
 // spman private macros
 #define sfprintf(text, ...) fprintf(fptr, text "\n", __VA_ARGS__)
 
-extern astd::string help[9];
+extern std::string help[9];
 extern astd::container_s libraries_paths;
-extern astd::string global_args;
+extern astd::container_s include_paths;
+extern std::string global_args;
 
-enum generator_type {
+enum GenType {
     vs2017 = 1,
     gmake4= 2,
 };
 
 
-enum project_type {
-    executable = 1,
-    shared_lib = 2,
+enum ProjectType {
+    App = 1,
+    Lib = 2,
 };
 
 //! Spman namespace.
@@ -48,38 +50,39 @@ namespace spman
     //! Util functions
     template<typename... Args>
     void add_compile_options(Args ... args);
-    astd::string include_subdirectory_files(const char* folder_name_with_pattern);
-    astd::string include_file(const char* filename);
+    std::string include_subdirectory_files(const char* folder_name_with_pattern);
+    std::string include_file(const char* filename);
     void add_library_path(const char* path_to_library);
-    
+    void add_include_path(const char* path_to_library);
+
     namespace priv
     {
         template<typename T>
         T add(T arg_);
  
         template<typename T, typename... Args>
-        astd::string add(T arg_, Args... args);
+        std::string add(T arg_, Args... args);
     } // namespace priv
 
     class Filemake {
         private:
-            astd::string files;
-            astd::string proj_name;
-            astd::string uuid;
+            std::string files;
+            std::string proj_name;
+            std::string uuid;
             astd::container_s library_names;
         public:
 
             Filemake(const char* project_name_);
             ~Filemake();
 
-            void GenerateFile(int project_generator, int proj_type = project_type::executable);
+            void GenerateFile(int project_generator, int proj_type = ProjectType::App);
 
             template<typename T, typename... Args>
             void include_files(T first, Args... args);
-            void link_library(astd::string name);
+            void link_library(std::string name);
 
-            astd::string getProjectName();
-            astd::string getUuid();
+            std::string getProjectName();
+            std::string getUuid();
             template<typename ... Args>
             friend void add_compile_options(Args ... args);
     };
@@ -88,15 +91,15 @@ namespace spman
 
     class MakeWorkspace {
         private:
-            astd::container<astd::string> uuids_and_names;
-            astd::string name;
+            astd::container<std::string> uuids_and_names;
+            std::string name;
         public:
-            MakeWorkspace(astd::string name);
+            MakeWorkspace(std::string name);
             ~MakeWorkspace();
             void AddProject(spman::Filemake &project);
-            void GenerateFile(int generator_type, int proj_type = project_type::executable);
+            void GenerateFile(int generator_type, int proj_type = ProjectType::App);
             void createClass();
-            void setName(astd::string new_name);
+            void setName(std::string new_name);
     };
 
     //! Template functions
@@ -106,8 +109,8 @@ namespace spman
         return arg_;
     }
     template<typename T, typename... Args>
-    astd::string priv::add(T arg_, Args... args) {
-        astd::string new_str(arg_);
+    std::string priv::add(T arg_, Args... args) {
+        std::string new_str(arg_);
         new_str += ' ';
         new_str += add(args...);
         return new_str;
